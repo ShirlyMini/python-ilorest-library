@@ -95,15 +95,18 @@ class SecurityStateError(Exception):
 
     pass
 
+
 class OneTimePasscodeError(Exception):
     """Raised when OTP is sent to the registered email."""
 
     pass
 
+
 class TokenExpiredError(Exception):
     """Raised when OTP entered has expired."""
 
     pass
+
 
 class UnauthorizedLoginAttemptError(Exception):
     """Raised when Login is Unauthorized"""
@@ -133,6 +136,7 @@ class HttpConnection(object):
                 self._connection_properties.update({"ca_cert_data": cert_data})
         self._proxy = self._connection_properties.pop("proxy", None)
         self.session_key = self._connection_properties.pop("session_key", None)
+        self.log_dir = self._connection_properties.pop("log_dir", None)
         self._init_connection()
 
     @property
@@ -394,9 +398,10 @@ class Blobstore2Connection(object):
         password = kwargs.pop("password", "nopassword")
         if isinstance(password, bytes):
             password = password.decode("utf-8")
+        log_dir = kwargs.pop("log_dir", "")
         try:
-            correctcreds = BlobStore2.initializecreds(username=username, password=password)
-            bs2 = BlobStore2()
+            correctcreds = BlobStore2.initializecreds(username=username, password=password, log_dir=log_dir)
+            bs2 = BlobStore2(log_dir=log_dir)
             if not correctcreds:
                 security_state = int(bs2.get_security_state())
                 if security_state == 3:

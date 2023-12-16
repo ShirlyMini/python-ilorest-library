@@ -72,6 +72,7 @@ class Typesandpathdefines(object):
         ca_cert_data={},
         isredfish=True,
         login_otp=None,
+        log_dir=None,
     ):
         """Function designed to verify the servers platform. Will generate the `Typeandpathdefines`
         variables based on the system type that is detected.
@@ -117,6 +118,7 @@ class Typesandpathdefines(object):
                     proxy=proxy,
                     ca_cert_data=ca_cert_data,
                     login_otp=login_otp,
+                    log_dir=log_dir,
                 )
                 client._get_root()
             except ServerDownOrUnreachableError as excp:
