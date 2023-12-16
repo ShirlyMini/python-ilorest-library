@@ -217,6 +217,7 @@ class RmcApp(object):
         user_ca_cert_data=None,
         json_out=False,
         login_otp=None,
+        log_dir=None,
     ):
         """Performs a login on a the server specified by the keyword arguments. Will also create
         a monolith, client, and update the compatibility classes for the app instance. If base_url
@@ -261,6 +262,7 @@ class RmcApp(object):
             proxy=proxy,
             isredfish=is_redfish,
             login_otp=login_otp,
+            log_dir=log_dir,
         )
         if user_ca_cert_data and self.typepath.iloversion < 5.23:
             raise IncompatibleiLOVersionError(
@@ -282,6 +284,7 @@ class RmcApp(object):
             proxy=proxy,
             ca_cert_data=user_ca_cert_data,
             login_otp=login_otp,
+            log_dir=log_dir,
         )
 
         self.current_client.login(self.current_client.auth_type)

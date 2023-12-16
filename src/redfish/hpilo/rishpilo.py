@@ -23,7 +23,7 @@ import logging
 import os
 import struct
 import time
-from ctypes import byref, c_uint32, c_void_p, create_string_buffer
+from ctypes import byref, c_uint32, c_char_p, c_void_p, create_string_buffer
 
 # ---------End of imports---------
 # ---------Debug logger---------
@@ -107,12 +107,15 @@ class HpIloNoDriverError(Exception):
 class HpIlo(object):
     """Base class of interaction with iLO"""
 
-    def __init__(self, dll=None):
+    def __init__(self, dll=None, log_dir=None):
         fhandle = c_void_p()
         self.dll = dll
+        self.log_dir = log_dir
         if LOGGER.isEnabledFor(logging.DEBUG):
-            self.dll.enabledebugoutput()
-        # LOGGER.debug("Calling ChifInitialize...")
+            self.dll.enabledebugoutput.argtypes = [c_char_p]
+            logdir_c = create_string_buffer(log_dir.encode('UTF-8'))
+            self.dll.enabledebugoutput(logdir_c)
+
         self.dll.ChifInitialize(None)
 
         self.dll.ChifCreate.argtypes = [c_void_p]

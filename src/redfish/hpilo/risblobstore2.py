@@ -172,9 +172,10 @@ class BlobReturnCodes(object):
 class BlobStore2(object):
     """Blob store 2 class"""
 
-    def __init__(self):
+    def __init__(self, log_dir=None):
         lib = self.gethprestchifhandle()
-        self.channel = HpIlo(dll=lib)
+        self.log_dir = log_dir
+        self.channel = HpIlo(dll=lib, log_dir=log_dir)
         self.max_retries = 3
 
     def __del__(self):
@@ -901,7 +902,7 @@ class BlobStore2(object):
         libbhndl.updaterandval(rndval)
 
     @staticmethod
-    def initializecreds(username=None, password=None):
+    def initializecreds(username=None, password=None, log_dir=None):
         """Get chif ready to use high security
         :param username: The username to login.
         :type username: str.
@@ -911,8 +912,7 @@ class BlobStore2(object):
 
         dll = BlobStore2.gethprestchifhandle()
         if LOGGER.isEnabledFor(logging.DEBUG):
-            dll.enabledebugoutput()
-        # LOGGER.debug("Calling ChifInitialize...")
+            dll.enabledebugoutput(log_dir)
         dll.ChifInitialize(None)
         if username:
             if not password:
