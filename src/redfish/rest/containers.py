@@ -26,6 +26,7 @@ except ImportError:
 
 from six import BytesIO, StringIO, string_types, text_type
 from six.moves import http_client
+from urllib3.util import Timeout, Retry
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -49,6 +50,17 @@ class JSONEncoder(json.JSONEncoder):
             return jsondict
         if isinstance(obj, bytes):
             obj = obj.decode("utf-8")
+        if isinstance(obj, Timeout):
+            jsondict = OrderedDict()
+            jsondict["connect_timeout"] = obj.connect_timeout
+            jsondict["read_timeout"] = obj.read_timeout
+            return jsondict
+        if isinstance(obj, Retry):
+            jsondict = OrderedDict()
+            jsondict["connect"] = obj.connect
+            jsondict["read"] = obj.read
+            jsondict["redirect"] = obj.redirect
+            return jsondict
         return json.JSONEncoder.default(self, obj)
 
 
