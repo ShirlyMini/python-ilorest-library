@@ -912,7 +912,8 @@ class BlobStore2(object):
 
         dll = BlobStore2.gethprestchifhandle()
         if LOGGER.isEnabledFor(logging.DEBUG):
-            dll.enabledebugoutput(log_dir)
+            logdir_c = create_string_buffer(log_dir.encode('UTF-8'))
+            dll.enabledebugoutput(logdir_c)
         dll.ChifInitialize(None)
         if username:
             if not password:

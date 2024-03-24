@@ -113,8 +113,9 @@ class HpIlo(object):
         self.log_dir = log_dir
         if LOGGER.isEnabledFor(logging.DEBUG):
             self.dll.enabledebugoutput.argtypes = [c_char_p]
-            logdir_c = create_string_buffer(log_dir.encode('UTF-8'))
-            self.dll.enabledebugoutput(logdir_c)
+            if log_dir is not None:
+                logdir_c = create_string_buffer(log_dir.encode('UTF-8'))
+                self.dll.enabledebugoutput(logdir_c)
 
         self.dll.ChifInitialize(None)
 
