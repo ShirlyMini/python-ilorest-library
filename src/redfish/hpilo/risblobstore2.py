@@ -912,7 +912,7 @@ class BlobStore2(object):
 
         dll = BlobStore2.gethprestchifhandle()
         if LOGGER.isEnabledFor(logging.DEBUG):
-            logdir_c = create_string_buffer(log_dir.encode('UTF-8'))
+            logdir_c = create_string_buffer(log_dir.encode('utf-8'))
             dll.enabledebugoutput(logdir_c)
         dll.ChifInitialize(None)
         if username:
@@ -925,16 +925,14 @@ class BlobStore2(object):
                 usernew = create_string_buffer(username.encode("utf-8"))
                 passnew = create_string_buffer(password.encode("utf-8"))
 
-                # LOGGER.debug("Calling initiate_credentials...")
                 dll.initiate_credentials(usernew, passnew)
-                # LOGGER.debug("Calling ChifVerifyCredentials...")
                 credreturn = dll.ChifVerifyCredentials()
                 if not credreturn == BlobReturnCodes.SUCCESS:
                     if credreturn == hpiloreturncodes.CHIFERR_AccessDenied:
                         raise Blob2SecurityError()
                     else:
                         raise HpIloInitialError(
-                            "Error %s occurred while trying " "to open a channel to iLO" % credreturn
+                            "Error %s occurred while trying to open a channel to iLO" % credreturn
                         )
             else:
                 dll.ChifDisableSecurity()

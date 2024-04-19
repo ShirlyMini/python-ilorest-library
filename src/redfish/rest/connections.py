@@ -450,6 +450,9 @@ class Blobstore2Connection(object):
                 if isinstance(body, bytes):
                     body = body.decode("utf-8")
                 body = json.dumps(body)
+            elif isinstance(body, bytes):
+                headers["Content-Type"] = "application/octet-stream"
+                body = bytearray(body)
             else:
                 headers["Content-Type"] = "application/x-www-form-urlencoded"
                 body = urlencode(body)
@@ -495,12 +498,14 @@ class Blobstore2Connection(object):
 
         if body and len(body) > 0:
             if isinstance(body, bytearray):
-                str1 = bytearray(str1.encode("ASCII")) + body
+                str1 = bytearray(str1.encode("utf-8")) + body
             else:
+                #if isinstance(body, bytes):
+                #    body = body.decode("utf-8")
                 str1 += body
 
         if not isinstance(str1, bytearray):
-            str1 = bytearray(str1.encode("ASCII"))
+            str1 = bytearray(str1.encode("utf-8"))
 
         if LOGGER.isEnabledFor(logging.DEBUG):
             try:
