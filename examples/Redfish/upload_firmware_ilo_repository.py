@@ -1,4 +1,4 @@
- # Copyright 2020 Hewlett Packard Enterprise Development LP
+ # Copyright 2019 Hewlett Packard Enterprise Development LP
  #
  # Licensed under the Apache License, Version 2.0 (the "License"); you may
  # not use this file except in compliance with the License. You may obtain
@@ -14,7 +14,7 @@
 
 # -*- coding: utf-8 -*-
 """
-An example of uploading firmware to the iLO Repository for flashing
+An example of uploading a component to the iLO Repository for flashing
 """
 
 import os
@@ -25,7 +25,7 @@ from redfish.rest.v1 import ServerDownOrUnreachableError
 
 from get_resource_directory import get_resource_directory
 
-def upload_firmware(_redfishobj, firmware_loc, update_repo=True, update_target=False):
+def upload_firmware(_redfishobj, firmware_loc, compsig_loc, update_repo=True, update_target=False):
     resource_instances = get_resource_directory(_redfishobj)
 
     if DISABLE_RESOURCE_DIR or not resource_instances:
@@ -47,15 +47,21 @@ def upload_firmware(_redfishobj, firmware_loc, update_repo=True, update_target=F
 
     filename = os.path.basename(firmware_loc)
     with open(firmware_loc, 'rb') as fle:
-        output = fle.read()
+        filenameOutput = fle.read()
+
+    filename = os.path.basename(compsig_loc)
+    with open(compsig_loc, 'rb') as fle:
+        compsigOutput = fle.read()
 
     session_tuple = ('sessionKey', session_key)
     parameters_tuple = ('parameters', json.dumps(json_data))
-    file_tuple = ('file', (filename, output, 'application/octet-stream'))
+    file_tuple = ('file', (filename, filenameOutput, 'application/octet-stream'))
+    comp_tuple = ('compsig', (filename, compsigOutput, 'application/octet-stream'))
 
     #Build the payload from each multipart-form data tuple
     body.append(session_tuple)
     body.append(parameters_tuple)
+    body.append(comp_tuple)
     body.append(file_tuple)
 
     #Create our header dictionary
@@ -82,12 +88,13 @@ if __name__ == "__main__":
     # SYSTEM_URL acceptable examples:
     # "https://10.0.0.0"
     # "https://ilo.hostname"
-    SYSTEM_URL = "https://16.83.61.104"
-    LOGIN_ACCOUNT = "admin"
-    LOGIN_PASSWORD = "password"
+    SYSTEM_URL = "https://10.0.0.0"
+    LOGIN_ACCOUNT = "admin
+    LOGIN_PASSWORD = "password
 
     # The path to the firmware file to upload
-    FIRMWARE_PATH = "C:\\Users\\oconnogr\\git\\python-restful-interface-tool\\src\\ilo5_230_p31.fwpkg"
+    FIRMWARE_PATH = "/path/to/component.exe"
+    COMPSIG_PATH = "/path/to/component.compsiq"
     # Upload the firmware file to the iLO Repository
     UPDATE_REPO = True
     # Update the system with the firmware file
@@ -107,6 +114,6 @@ if __name__ == "__main__":
         sys.stderr.write("ERROR: server not reachable or does not support RedFish.\n")
         sys.exit()
 
-    upload_firmware(REDFISHOBJ, FIRMWARE_PATH, UPDATE_REPO, UPDATE_TARGET)
+    upload_firmware(REDFISHOBJ, FIRMWARE_PATH, COMPSIG_PATH, UPDATE_REPO, UPDATE_TARGET)
 
     REDFISHOBJ.logout()
