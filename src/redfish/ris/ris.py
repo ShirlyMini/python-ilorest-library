@@ -40,6 +40,8 @@ import jsonpath_rw
 import jsonpointer
 from jsonpointer import set_pointer
 from six.moves.urllib.parse import urlparse, urlunparse
+from six.moves.urllib.parse import ParseResult
+from six.moves.urllib.parse import quote
 
 from redfish.rest.containers import RestRequest, StaticRestResponse
 from redfish.ris.ris_threaded import LoadWorker
@@ -575,7 +577,7 @@ class RisMonolith(Dictable):
         :type path_refresh: bool
         """
 
-        if path.endswith("?page=1") and not loadcomplete:
+        if (path.endswith("?page=1") or path.endswith(".json")) and not loadcomplete:
             # Don't download schemas in crawl unless we are loading absolutely everything
             return
         elif not includelogs and crawl:
@@ -583,13 +585,12 @@ class RisMonolith(Dictable):
             if "/log" in path.lower():
                 return
 
-        # TODO: need to find a better way to support non ascii characters
-        path = path.replace("|", "%7C")
-        # remove fragments
-        newpath = urlparse(path)
-        newpath = list(newpath[:])
-        newpath[-1] = ""
-        path = urlunparse(tuple(newpath))
+        # remove fragments and quote characters in path
+        p = urlparse(path)
+        p = ParseResult(
+            scheme=p.scheme, netloc=p.netloc, path=quote(p.path), params=p.params, query=p.query, fragment=""
+        )
+        path = urlunparse(p)
 
         if prevpath and prevpath != path:
             self.ctree[prevpath].update([path])
@@ -617,10 +618,8 @@ class RisMonolith(Dictable):
 
         self.update_member(resp=resp, path=path, init=init)
 
-        fpath = (
-            lambda pa, path: path
-            if pa.endswith(self.typepath.defs.hrefstring) and pa.startswith((self.collstr, "Entries"))
-            else None
+        fpath = lambda pa, path: (
+            path if pa.endswith(self.typepath.defs.hrefstring) and pa.startswith((self.collstr, "Entries")) else None
         )
 
         if loadtype == "href":

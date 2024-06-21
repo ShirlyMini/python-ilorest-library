@@ -1,7 +1,7 @@
 """ Redfish restful library """
 
 __all__ = ["rest", "ris", "hpilo"]
-__version__ = "5.0.0.0"
+__version__ = "5.1.0.0"
 
 import logging
 

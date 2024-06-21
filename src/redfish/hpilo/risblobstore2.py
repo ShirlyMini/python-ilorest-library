@@ -25,6 +25,8 @@ import random
 import string
 import struct
 import sys
+import time
+import os
 from ctypes import (
     POINTER,
     c_char_p,
@@ -176,7 +178,9 @@ class BlobStore2(object):
         lib = self.gethprestchifhandle()
         self.log_dir = log_dir
         self.channel = HpIlo(dll=lib, log_dir=log_dir)
-        self.max_retries = 3
+        self.max_retries = 40
+        self.max_read_retries = 3
+        self.delay = 0.25
 
     def __del__(self):
         """Blob store 2 close channel function"""
@@ -233,19 +237,31 @@ class BlobStore2(object):
         data = ptr[: lib.size_of_infoRequest()]
         data = bytearray(data)
 
-        resp = self._send_receive_raw(data)
+        while(retries <= self.max_retries):
+            """The Redfish request is submitted to iLO successfully in rest_immediate() function.
+            Here we are checking if iLO has processed the Redfish request and the response is 
+            written in the key in the volatile namespace in blob. 
+            If iLO has not processed the request and response is not written, we get BADPARAMETER error. 
+            Hence retry after 0.25 seconds."""
+            resp = self._send_receive_raw(data)
 
-        errorcode = struct.unpack("<I", bytes(resp[8:12]))[0]
-        if errorcode == BlobReturnCodes.BADPARAMETER:
-            if retries < self.max_retries:
-                self.get_info(key=key, namespace=namespace, retries=retries + 1)
+            #checking for errors in the received response
+            errorcode = struct.unpack("<I", bytes(resp[8:12]))[0]
+
+            if errorcode == BlobReturnCodes.BADPARAMETER:
+                #if BADPARAMETER, delaying the execution by 0.25 seconds and retrying "send_receive_raw"
+                if retries < self.max_retries:
+                    time.sleep(self.delay)
+                    retries += 1
+                else:
+                    #if all retries are exhausted and an error is still received, raise Blob2override error.
+                    raise Blob2OverrideError(errorcode)
+            elif errorcode == BlobReturnCodes.NOTFOUND:
+                raise BlobNotFoundError(key, namespace)
+            elif not (errorcode == BlobReturnCodes.SUCCESS or errorcode == BlobReturnCodes.NOTMODIFIED):
+                raise HpIloError(errorcode)
             else:
-                raise Blob2OverrideError(errorcode)
-        elif errorcode == BlobReturnCodes.NOTFOUND:
-            raise BlobNotFoundError(key, namespace)
-
-        if not (errorcode == BlobReturnCodes.SUCCESS or errorcode == BlobReturnCodes.NOTMODIFIED):
-            raise HpIloError(errorcode)
+                break
 
         response = resp[lib.size_of_responseHeaderBlob() :]
 
@@ -288,7 +304,7 @@ class BlobStore2(object):
             bytesread = struct.unpack("<I", bytes(recvpkt[readhead:(newreadsize)]))[0]
 
             if bytesread == 0:
-                if retries < self.max_retries:
+                if retries < self.max_read_retries:
                     data = self.read(key=key, namespace=namespace, retries=retries + 1)
                     return data
                 else:
@@ -431,16 +447,29 @@ class BlobStore2(object):
         data = ptr[: lib.size_of_deleteRequest()]
         data = bytearray(data)
 
-        resp = self._send_receive_raw(data)
+        while(retries <= self.max_retries):
+            """The Redfish request is submitted to iLO successfully in rest_immediate() function.
+            Here we are checking if iLO has processed the Redfish request and the response is 
+            written in the key in the volatile namespace in blob. 
+            If iLO has not processed the request and response is not written, we get BADPARAMETER error. 
+            Hence retry after 0.25 seconds."""
+            resp = self._send_receive_raw(data)
 
-        errorcode = struct.unpack("<I", bytes(resp[8:12]))[0]
-        if errorcode == BlobReturnCodes.BADPARAMETER:
-            if retries < self.max_retries:
-                self.delete(key=key, namespace=namespace, retries=retries + 1)
+            #checking for errors in the received response
+            errorcode = struct.unpack("<I", bytes(resp[8:12]))[0]
+
+            if errorcode == BlobReturnCodes.BADPARAMETER:
+                #if error is BADPARAMETER, delaying the execution by 0.25 seconds and retrying "send_receive_raw"
+                if retries < self.max_retries:
+                    time.sleep(self.delay)
+                    retries += 1
+                else:
+                    #if all retries are exhausted and an error is still received, raise Blob2override error.
+                    raise Blob2OverrideError(errorcode)
+            elif not (errorcode == BlobReturnCodes.SUCCESS or errorcode == BlobReturnCodes.NOTMODIFIED):
+                raise HpIloError(errorcode)
             else:
-                raise Blob2OverrideError(errorcode)
-        elif not (errorcode == BlobReturnCodes.SUCCESS or errorcode == BlobReturnCodes.NOTMODIFIED):
-            raise HpIloError(errorcode)
+                break
 
         self.unloadchifhandle(lib)
 
@@ -889,6 +918,21 @@ class BlobStore2(object):
         if libhandle:
             BlobStore2.setglobalhprestchifrandnumber(libhandle)
             return libhandle
+        else:
+            import site
+            site_packages = site.getsitepackages()
+            for package in site_packages:
+                try:
+                    if os.name != "nt":
+                        libpath = os.path.join(package, "ilorest", "chiflibrary", "ilorest_chif.so")
+                    else:
+                        libpath = os.path.join(package, "ilorest", "chiflibrary", "ilorest_chif.dll")
+                    libhandle = cdll.LoadLibrary(libpath)
+                except Exception as exp:
+                    excp = exp
+                if libhandle:
+                    BlobStore2.setglobalhprestchifrandnumber(libhandle)
+                    return libhandle
         raise ChifDllMissingError(excp)
 
     @staticmethod

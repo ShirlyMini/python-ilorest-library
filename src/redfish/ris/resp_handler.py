@@ -81,8 +81,6 @@ class ResponseHandler(object):
 
         if response.status < 300 and (response._rest_request.method == "GET" or not response.read):
             # for rawget
-            if verbosity == 0:
-                verbosity = 1
             print_handler(
                 self.verbosity_levels(
                     message=message_text, response_status=response.status, verbosity=verbosity, dl_reg=dl_reg
@@ -285,7 +283,7 @@ class ResponseHandler(object):
                 + "\n"
             )
         else:
-            return "" + message + "\n"
+            return ""
 
     # unused? (removal pending)
     @staticmethod

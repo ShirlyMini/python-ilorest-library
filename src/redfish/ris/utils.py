@@ -115,6 +115,16 @@ def merge_dict(currdict, newdict):
 
         if isinstance(itemv1, Mapping) and isinstance(itemv2, Mapping):
             merge_dict(itemv1, itemv2)
+        elif isinstance(itemv1, list) and isinstance(itemv2, list):
+            j = 0
+            for i in itemv2:
+                if isinstance(i, dict):
+                    for k, v in i.items():
+                        if k not in [d.keys() for d in itemv1]:
+                            itemv1[j][k] = v
+                            j = j + 1
+                else:
+                    itemv1.append(i)
         else:
             currdict[k] = itemv2
 
