@@ -772,7 +772,10 @@ class RmcApp(object):
                         payload = createdict(indices.pop(), payload)
                     merge_dict(totpayload, payload)
                 currdict = copy.deepcopy(totpayload)
-
+            if "PersistentBootConfigOrder" in currdict and type(currdict) is dict:
+                currdict = list(set(currdict["PersistentBootConfigOrder"]))
+                default_value = 0
+                currdict = {key: default_value for key in currdict}
             if currdict:
                 yield instance.resp.request.path
 
@@ -962,7 +965,6 @@ class RmcApp(object):
 
         if results.status == 400 and results.dict is None:
             return results
-        
         if not silent and hasattr(self.typepath.defs, "messageregistrytype"):
             ResponseHandler(self.validationmanager, self.typepath.defs.messageregistrytype).output_resp(
                 results, dl_reg=service, verbosity=self.verbose
