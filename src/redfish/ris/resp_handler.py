@@ -283,7 +283,10 @@ class ResponseHandler(object):
                 + "\n"
             )
         else:
-            return ""
+            if response_status == 400:
+                return "" + message + "\n"
+            else:
+                return ""
 
     # unused? (removal pending)
     @staticmethod

@@ -478,12 +478,15 @@ class RestClient(RestClientBase):
         else:
             self.session_key = self.connection.session_key
 
-        if "OneTimePasscodeSent" in self.login_response:
-            raise OneTimePasscodeError()
-        elif "UnauthorizedLogin" in self.login_response:
-            raise UnauthorizedLoginAttemptError("Error "+str(self.login_return_code)+". Login is unauthorized.\nPlease check the credentials/OTP entered.\n")
-        elif "TokenExpired" in self.login_response:
-            raise TokenExpiredError("Error "+str(self.login_return_code)+". The OTP entered has expired. Please enter credentials again.\n")
+        if hasattr(self, "login_response") and self.login_response:
+            if "OneTimePasscodeSent" in self.login_response:
+                raise OneTimePasscodeError()
+            elif "UnauthorizedLogin" in self.login_response:
+                raise UnauthorizedLoginAttemptError("Error " + str(
+                    self.login_return_code) + ". Login is unauthorized.\nPlease check the credentials/OTP entered.\n")
+            elif "TokenExpired" in self.login_response:
+                raise TokenExpiredError("Error " + str(
+                    self.login_return_code) + ". The OTP entered has expired. Please enter credentials again.\n")
         elif not self.session_key and not resp.status == 200:
             self._credential_err()
         else:

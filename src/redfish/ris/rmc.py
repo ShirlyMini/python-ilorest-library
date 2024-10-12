@@ -773,9 +773,10 @@ class RmcApp(object):
                     merge_dict(totpayload, payload)
                 currdict = copy.deepcopy(totpayload)
             if "PersistentBootConfigOrder" in currdict and type(currdict) is dict:
-                currdict = list(set(currdict["PersistentBootConfigOrder"]))
-                default_value = 0
-                currdict = {key: default_value for key in currdict}
+                refdict = list(set(currdict["PersistentBootConfigOrder"]))
+                items = list(currdict["PersistentBootConfigOrder"])
+                items_to_keep = items[: int(len(refdict))]
+                currdict = {"PersistentBootConfigOrder": items_to_keep}
             if currdict:
                 yield instance.resp.request.path
 
@@ -905,6 +906,13 @@ class RmcApp(object):
                 results = self.current_client.get(get_path, headers=headers)
 
         if results and getattr(results, "status", None) and results.status == 404:
+            if not silent:
+                if hasattr(self.typepath.defs, "messageregistrytype"):
+                    ResponseHandler(self.validationmanager, self.typepath.defs.messageregistrytype).output_resp(
+                        results, dl_reg=service, verbosity=self.verbose
+                    )
+                else:
+                    print_handler("[" + str(results.status) + "]" + " The operation completed successfully.\n")
             return results
 
         if results and results.status == 200 and sessionid:
